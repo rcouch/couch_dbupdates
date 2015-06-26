@@ -4,18 +4,19 @@
 
 
 handle_dbupdates(Fun, Acc, Options) ->
-    NotifierPid = db_update_notifier(),
+    _ = couch_event:subscribe(db_updated),
     try
         loop(Fun, Acc, Options)
     after
-        couch_db_update_notifier:stop(NotifierPid)
+        couch_event:unsubscribe(db_updated)
     end.
 
 
 loop(Fun, Acc, Options) ->
     [{timeout, Timeout}, {heartbeat, Heartbeat}] = Options,
     receive
-        {db_updated, Event} ->
+        {couch_event, db_updated, Event} ->
+            io:format("got db event ~p~n", [Event]),
             case Fun(Event, Acc) of
                 {ok, Acc1} ->
                     loop(Fun, Acc1, Options);
@@ -37,10 +38,3 @@ loop(Fun, Acc, Options) ->
                 Fun(stop, Acc)
         end
     end.
-
-db_update_notifier() ->
-    Self = self(),
-    {ok, Notifier} = couch_db_update_notifier:start_link(fun(Event) ->
-        Self ! {db_updated, Event}
-    end),
-    Notifier.

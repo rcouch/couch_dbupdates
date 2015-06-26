@@ -65,6 +65,6 @@ handle_update(Event, #state{resp=Resp, feed="longpoll"}) ->
     couch_httpd:send_chunk(Resp, ?JSON_ENCODE(JsonObj)),
     stop.
 
-event_obj({Type, DbName}) ->
+event_obj({DbName, Type}) ->
     {[{<<"type">>, couch_util:to_binary(Type)},
       {<<"db_name">>, couch_util:to_binary(DbName)}]}.
